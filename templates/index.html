@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Auth System</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        form { margin-bottom: 2em; }
+        input, button { margin: 0.2em; }
+        .result { margin-top: 1em; color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>User Authentication System</h1>
+    <h2>Register</h2>
+    <form id="register-form">
+        <input type="text" id="reg-username" placeholder="Username" required>
+        <input type="email" id="reg-email" placeholder="Email" required>
+        <input type="password" id="reg-password" placeholder="Password" required>
+        <button type="submit">Register</button>
+    </form>
+    <div id="register-result"></div>
+
+    <h2>Login</h2>
+    <form id="login-form">
+        <input type="text" id="login-username" placeholder="Username" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
+    <div id="login-result"></div>
+
+    <h2>Get My Info (Protected)</h2>
+    <button id="me-btn">Get My Info</button>
+    <div id="me-result"></div>
+
+    <script>
+        let token = '';
+
+        // Register
+        document.getElementById('register-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const res = await fetch('/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            const data = await res.json();
+            document.getElementById('register-result').innerHTML = res.ok ?
+                `<div class='result'>Registered! ID: ${data.id}</div>` :
+                `<div class='error'>${data.detail || 'Error'}</div>`;
+        };
+
+        // Login
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const res = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                token = data.access_token;
+                document.getElementById('login-result').innerHTML = `<div class='result'>Logged in! Token saved.</div>`;
+            } else {
+                document.getElementById('login-result').innerHTML = `<div class='error'>${data.detail || 'Error'}</div>`;
+            }
+        };
+
+        // Get My Info
+        document.getElementById('me-btn').onclick = async () => {
+            if (!token) {
+                document.getElementById('me-result').innerHTML = `<div class='error'>Please log in first.</div>`;
+                return;
+            }
+            const res = await fetch('/auth/me', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            document.getElementById('me-result').innerHTML = res.ok ?
+                `<div class='result'>Hello, ${data.username} (role: ${data.role})</div>` :
+                `<div class='error'>${data.detail || 'Error'}</div>`;
+        };
+    </script>
+</body>
+</html> 
