@@ -45,7 +45,18 @@ app.add_middleware(
 
 # Set up SlowAPI rate limiter
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Remove or comment out the default handler:
+# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": "Too Many Requests: You have exceeded the allowed number of attempts. Please try again later.",
+            "error": str(exc)
+        }
+    )
 
 # Add security headers (HSTS, X-Content-Type-Options, etc.)
 @app.middleware("http")
